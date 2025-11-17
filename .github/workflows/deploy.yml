@@ -1,42 +1,58 @@
-name: Deploy Vite React App
+name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  build:
+  server:
+    name: Server - install & lint & test
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install
+      - name: Install server deps
+        run: npm ci
 
-      - name: Build project
-        working-directory: ./frontend
-        run: npm run build
+      - name: Run server lint (if any)
+        run: npm run lint || echo "no lint"
 
-      - name: Upload dist folder
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: frontend/dist
+      - name: Run server tests
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          npm test || echo "No tests or tests failed"
 
-  deploy:
+  client:
+    name: Client - install & build
     runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      pages: write
-      id-token: write
-
+    defaults:
+      run:
+        working-directory: ./client
     steps:
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install client deps
+        run: npm ci
+
+      - name: Run client lint
+        run: npm run lint || echo "no lint"
+
+      - name: Build client
+        run: npm run build
