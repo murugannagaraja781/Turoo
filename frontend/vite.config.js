@@ -3,5 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/turoo/", // Use your repo name EXACTLY
+  base: "/", // Use your repo name EXACTLY
 });
