@@ -1,19 +1,29 @@
 import jwt from "jsonwebtoken";
-export const auth = (req, res, next) => {
-  const header = req.headers.authorization?.split(" ")[1];
-  if (!header) return res.status(401).json({ msg: "no token" });
-  try {
-    req.user = jwt.verify(header, process.env.JWT_SECRET);
-    next();
-  } catch (e) {
-    res.status(401).json({ msg: "invalid token" });
+import User from "../models/User.js";
+
+const authMiddleware = async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "turoosecret"
+      );
+      req.user = await User.findById(decoded.id).select("-password");
+      next();
+    } catch (error) {
+      res.status(401).json({ message: "Not authorized, token failed" });
+    }
+  }
+
+  if (!token) {
+    res.status(401).json({ message: "Not authorized, no token" });
   }
 };
 
-export const permit =
-  (...allowed) =>
-  (req, res, next) => {
-    if (!req.user) return res.status(401).json({ msg: "no user" });
-    if (allowed.includes(req.user.role)) return next();
-    return res.status(403).json({ msg: "forbidden" });
-  };
+export default authMiddleware;
