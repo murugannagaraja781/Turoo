@@ -4,9 +4,11 @@ import City from "../models/City.js";
 const router = express.Router();
 
 // Get all cities
+
 router.get("/", async (req, res) => {
   try {
     const cities = await City.find({ isActive: true });
+    console.log("Cities fetched:", cities);
     res.json(cities);
   } catch (error) {
     res.status(500).json({ message: error.message });
