@@ -1,12 +1,28 @@
 import express from "express";
 import http from "http";
+import cors from "cors";
 import { Server } from "socket.io";
 
 const app = express();
+
+// IMPORTANT: Express CORS
+app.use(
+  cors({
+    origin: ["https://turoo.vercel.app"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
 const server = http.createServer(app);
 
+// IMPORTANT: Socket.IO CORS
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "https://turoo.vercel.app",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 io.on("connection", (socket) => {
@@ -30,4 +46,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(6000, () => console.log("Server running on 6000"));
+// Render will give PORT automatically
+const PORT = process.env.PORT || 6000;
+
+server.listen(PORT, () => console.log(`Server running on ${PORT}`));
