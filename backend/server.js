@@ -1,43 +1,33 @@
 import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
-
-// Import routes
-import cityRoutes from "./routes/cities.js";
-import placeRoutes from "./routes/places.js";
-import planRoutes from "./routes/plans.js";
-import authRoutes from "./routes/auth.js";
-import adminRoutes from "./routes/admin.js";
-
-dotenv.config();
+import http from "http";
+import { Server } from "socket.io";
 
 const app = express();
+const server = http.createServer(app);
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use("/api/cities", cityRoutes);
-app.use("/api/places", placeRoutes);
-app.use("/api/plans", planRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/admin", adminRoutes);
-
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/turoo", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+const io = new Server(server, {
+  cors: { origin: "*" },
 });
 
-const db = mongoose.connection;
-db.on("error", console.error.bind(console, "connection error:"));
-db.once("open", () => {
-  console.log("Connected to MongoDB");
+io.on("connection", (socket) => {
+  console.log("Connected:", socket.id);
+
+  socket.on("join", (room) => {
+    socket.join(room);
+    socket.to(room).emit("peer-joined");
+  });
+
+  socket.on("offer", ({ room, sdp }) => {
+    socket.to(room).emit("offer", sdp);
+  });
+
+  socket.on("answer", ({ room, sdp }) => {
+    socket.to(room).emit("answer", sdp);
+  });
+
+  socket.on("ice", ({ room, ice }) => {
+    socket.to(room).emit("ice", ice);
+  });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(6000, () => console.log("Server running on 6000"));
