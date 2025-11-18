@@ -10,9 +10,10 @@ app.use(express.json());
 
 app.post("/api/make-call", async (req, res) => {
   try {
+    console.log("REQ BODY:", req.body); // DEBUG (keep this)
+
     const { caller_id, client_number } = req.body;
 
-    // Basic validation — don't trust frontend
     if (!caller_id || !client_number) {
       return res
         .status(400)
